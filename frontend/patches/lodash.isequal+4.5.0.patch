@@ -1,0 +1,14 @@
+diff --git a/node_modules/lodash.isequal/index.js b/node_modules/lodash.isequal/index.js
+index c249083..6805ecd 100644
+--- a/node_modules/lodash.isequal/index.js
++++ b/node_modules/lodash.isequal/index.js
+@@ -10,6 +10,9 @@
+ /** Used as the size to enable large array optimizations. */
+ var LARGE_ARRAY_SIZE = 200;
+ 
++const { isDeepStrictEqual } = require('node:util');
++module.exports = isDeepStrictEqual;
++
+ /** Used to stand-in for `undefined` hash values. */
+ var HASH_UNDEFINED = '__lodash_hash_undefined__';
+ 

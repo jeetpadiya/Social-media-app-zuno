@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+body{
+    background:linear-gradient(to right,#13072e,#110331);
+}
+
+::-webkit-scrollbar{
+    display: none;
+}
