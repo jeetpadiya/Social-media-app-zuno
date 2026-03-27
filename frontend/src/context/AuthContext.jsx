@@ -8,23 +8,21 @@ export const AuthContext = createContext()
 
 const AuthContextProvider = ({ children }) => {
   const navigate = useNavigate()
-  const backendUrl = 'http://localhost:5000'
+  const backendUrl = import.meta.env.VITE_BACKEND_URL
 
   // initialize token state from cookie
   const [token, setToken] = useState(!!Cookies.get('token'))
-  const [user, setUser]   = useState(null)
+  const [user, setUser] = useState(null)
 
-  // keep axios Authorization header in sync
+  // keep axios Authorization header in sync whenever auth state changes
   useEffect(() => {
     const t = Cookies.get('token')
-    if (t) {
+    if (t && token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${t}`
-      setToken(true)
     } else {
       delete axios.defaults.headers.common['Authorization']
-      setToken(false)
     }
-  }, [])
+  }, [token])
 
   // fetch /api/user/me when token flips to true
   const fetchCurrentUserDetails = async () => {
@@ -44,16 +42,16 @@ const AuthContextProvider = ({ children }) => {
     if (token) {
       fetchCurrentUserDetails()
     }
-  }, [])
+  }, [token])
 
   // REGISTER
   const handleRegister = async (username, email, password, avatarFile) => {
     try {
       const formData = new FormData()
       formData.append('username', username)
-      formData.append('email',    email)
+      formData.append('email', email)
       formData.append('password', password)
-      formData.append('image',    avatarFile)
+      formData.append('image', avatarFile)
 
       const { data } = await axios.post(
         `${backendUrl}/api/user/register`,
@@ -69,8 +67,8 @@ const AuthContextProvider = ({ children }) => {
         navigate('/posts')
       }
     } catch (err) {
-      console.error('Registasion error:',err.response || err)
-      toast.error( err.response?.data?.message || 'Registration failed.')
+      console.error('Registasion error:', err.response || err)
+      toast.error(err.response?.data?.message || 'Registration failed.')
     }
   }
 

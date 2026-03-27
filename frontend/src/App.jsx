@@ -7,12 +7,14 @@ import PostPage from './pages/PostPage'
 import AddPost from './components/AddPost'
 import Landing from './pages/Landing'
 import Register from './pages/Register'
+import ProfilePage from './pages/ProfilePage'
+import UserProfilePage from './pages/UserProfilePage'
 
 function App() {
   const { token } = useContext(AuthContext)
 
   return (
-    <div className="text-red-500">
+    <div className="min-h-screen">
       <ToastContainer />
 
       {token ? (
@@ -20,6 +22,8 @@ function App() {
           <NavBar />
           <Routes>
             <Route path="/posts" element={<PostPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/users/:id" element={<UserProfilePage />} />
             <Route path="/" element={<Navigate to="/posts" replace />} />
             <Route path="/create-post" element={<AddPost />} />
             {/* catch-all: redirect unknown to /posts */}

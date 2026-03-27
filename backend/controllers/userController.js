@@ -20,7 +20,7 @@ const register = async (req,res)=>{
         const existingUser =  await userModel.findOne({email})
         
         if(existingUser){
-            return res.status(401).json({success:true,message:"User Already exist"})
+            return res.status(409).json({success:false,message:"User Already exist"})
         }
 
         const  salt = await bcrypt.genSalt(10)
@@ -34,7 +34,7 @@ const register = async (req,res)=>{
         })
         await  newUser.save()
 
-        const token = jwt.sign({id:newUser._id,email:newUser.email, name:newUser.usrname},process.env.JWT_SECRET,{expiresIn:'7d'})
+        const token = jwt.sign({id:newUser._id,email:newUser.email, name:newUser.username},process.env.JWT_SECRET,{expiresIn:'7d'})
 
         res.cookie('token',token,{
             httpOnly:false,
@@ -54,7 +54,7 @@ const register = async (req,res)=>{
     }
     catch(error){
         console.log(error);
-        res.status(500).json({success:true,message:"Internal Server Error"})
+        res.status(500).json({success:false,message:"Internal Server Error"})
     }
 }
 const login = async(req,res)=>{
@@ -71,7 +71,7 @@ const login = async(req,res)=>{
             }
                 const isPasswordValid = await bcrypt.compare(password,user.password)
                 if(!isPasswordValid){
-                    res.status(401).json({success:false,message:"Invalid credtions"})
+                    return res.status(401).json({success:false,message:"Invalid credtions"})
                 }
 
                 const token = jwt.sign({id:user._id,email:user.email,name:user.username},process.env.JWT_SECRET,{expiresIn:'7d'})
@@ -80,7 +80,7 @@ const login = async(req,res)=>{
             httpOnly:false,
             secure:false,
             sameSite:'Lax',
-            maxAge: 7*24*60*1000
+            maxAge: 7 * 24 * 60 * 60 * 1000
         })
           const userResponse = {
                 id:user._id,
@@ -89,12 +89,12 @@ const login = async(req,res)=>{
                 avatar: user.avatar
         }
 
-        res.status(200).json({success:"true",message:"Login is succesfull",user:userResponse,token:token})
+        res.status(200).json({success:true,message:"Login is succesfull",user:userResponse,token:token})
 
         }   
     catch(error){
         console.log(error);
-        res.status(500).send({success:true,messsage:"Internal server error"})
+        res.status(500).send({success:false,messsage:"Internal server error"})
     }
 }
 
@@ -110,9 +110,22 @@ const me = async(req,res)=>{
 
      }catch(error){
         console.log(error);
-        res.status(500).send({success:true,messsage:"Internal server error"})
+        res.status(500).send({success:false,messsage:"Internal server error"})
      }
 }
 
+const getUserById = async (req, res) => {
+    try {
+        const user = await userModel.findById(req.params.id).select('-password')
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not Found" })
+        }
+        res.status(200).json({ success: true, user })
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ success: false, messsage: "Internal server error" })
+    }
+}
 
-export {register,login,me}
+
+export {register,login,me,getUserById}

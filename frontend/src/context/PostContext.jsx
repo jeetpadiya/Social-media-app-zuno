@@ -1,7 +1,6 @@
 import axios from 'axios'
 import cookies from 'js-cookie'
 import { createContext, useContext, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
 import { toast } from 'react-toastify';
 
@@ -9,9 +8,7 @@ export const PostContext = createContext();
 
 const PostContextProvider =({children})=>{
 
-const navigate = useNavigate();
-
-const{backendUrl,token} = useContext(AuthContext)
+const{backendUrl,token,handleLogout,user} = useContext(AuthContext)
 const[Allposts,setAllposts] = useState([])
 const[userPosts,setUserPosts] = useState([])
 
@@ -42,12 +39,22 @@ const fetchPostsofLoginUser =async()=>{
             })
             console.log('token',token)
 
+            if(!data){
+                toast.error(data.message || "Failed to fetch user's posts")
+                return;
+            }
             if(data.success){
-                setUserPosts(data.posts)
+                setUserPosts(Array.isArray(data.posts) ? data.posts : [])
             }
     }
     catch(error){
-        console.log(error);  
+        console.log(error);
+        if (error.response?.status === 401) {
+            toast.error('Session expired, please log in again.')
+            handleLogout()
+            return
+        }
+        toast.error(error.response?.data?.message || error.message)
     }
 }
 
@@ -77,7 +84,25 @@ const postsComments = async (id,text)=>{
              })
              if(data.success){
                 toast.success(data.message)
-                fetchallPosts();
+                const normalizedComment = {
+                    ...data.comment,
+                    user: data.comment?.user?.username ? data.comment.user : {
+                        _id: user?._id || user?.id,
+                        username: user?.username || 'You',
+                        avatar: user?.avatar || ''
+                    }
+                }
+
+                setAllposts((prev) =>
+                    prev.map((post) =>
+                        post._id === id
+                            ? {
+                                  ...post,
+                                  comments: [...(post.comments || []), normalizedComment],
+                              }
+                            : post
+                    )
+                )
              }
     }
    catch(error){
@@ -100,13 +125,14 @@ const createPost = async(text,image)=>{
                  })   
                  if(data.success){
                     toast.success(data.message)
-                    fetchallPosts();
-                    navigate('/posts')
+                    await Promise.all([fetchallPosts(), fetchPostsofLoginUser()])
+                    return true
                  }
         }
         catch(error){
             toast.error(error.message)
         }
+        return false
 }
 
 const deltePosts = async (id) => {
@@ -138,7 +164,7 @@ useEffect (()=>{
         fetchallPosts()
         fetchPostsofLoginUser()
     }
-},[])
+},[token])
 
 const values={
     fetchallPosts,

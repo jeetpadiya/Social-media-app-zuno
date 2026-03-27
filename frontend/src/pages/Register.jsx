@@ -57,9 +57,9 @@ const Register = () => {
       </div>
 
       {/* Right side - Registration Form */}
-      <div className="flex-1 max-w-md mx-4 sm:mx-auto border border-gray-500 rounded-xl">
+      <div className="mx-4 w-full max-w-md flex-1 rounded-2xl border border-gray-500">
         <div className="rounded-lg p-6 shadow-lg bg-gray-800">
-          <img src={image2} alt="logo" className="w-full h-27 mb-6" />
+          <img src={image2} alt="logo" className="mb-6 w-full" />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
@@ -116,11 +116,11 @@ const Register = () => {
             <hr className="flex-1 border-gray-700" />
           </div>
 
-          <div className="py-3 rounded-lg flex items-center justify-evenly">
+          {/* <div className="py-3 rounded-lg flex items-center justify-evenly">
             <FaFacebook className="text-3xl cursor-pointer" />
             <FaGoogle className="text-3xl cursor-pointer" />
             <FaApple className="text-3xl cursor-pointer" />
-          </div>
+          </div> */}
 
           <p className="text-center text-sm text-gray-400 mt-4">
             Already have an account?{" "}
@@ -133,7 +133,7 @@ const Register = () => {
           </p>
         </div>
 
-        <div className="mt-4 bg-[#251469e8] text-gray-400 rounded-lg p-4 text-center">
+        {/* <div className="mt-4 bg-[#251469e8] text-gray-400 rounded-lg p-4 text-center">
           <p>Get the app</p>
           <div className="flex justify-center space-x-4 mt-4">
             <img
@@ -147,7 +147,7 @@ const Register = () => {
               className="w-28 md:w-32 h-10 cursor-pointer"
             />
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

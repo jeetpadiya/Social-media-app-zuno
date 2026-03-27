@@ -6,8 +6,7 @@ import userRouter from './routes/userRouter.js';
 import postRouter from './routes/postRouter.js';
 
 const app = express();
-const PORT = process.env.PORT  || 4000
-connectDB()
+const PORT = process.env.PORT  || 5000
 
 app.use(express.json());
 app.use(cors());
@@ -15,12 +14,16 @@ app.use(cors());
 app.use('/api/user',userRouter)
 app.use('/api/posts',postRouter)
 
+const startServer = async () => {
+    try {
+        await connectDB()
+        app.listen(PORT,()=>{
+                console.log(`Server is connceted with this :${PORT}`)
+        })
+    } catch (error) {
+        console.error('Failed to connect to database', error)
+        process.exit(1)
+    }
+}
 
-app.listen(PORT,()=>{
-        console.log(`Server is connceted with this :${PORT}`)
-})
-
-//password-EPFLEvaSzEeZK0oa
-//username-jeetpadiya4
-
-//mongodb+srv://jeetpadiya4:<db_password>@cluster0.hwknyem.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+startServer()

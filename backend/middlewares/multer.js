@@ -8,13 +8,14 @@ cloudinary.config({
     api_secret:process.env.CLOUDINARY_API_SECRET
 })
 
-const  storage  = new CloudinaryStorage({
-        cloudinary:cloudinary,
-        params:{
-            folder:'social_media_app',
-            allowed_format:['jpg','jpeg','png','mp4','mov']
-        }
-})
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'social_media_app',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'mp4', 'mov', 'svg'], // Added the 's'
+        resource_type: 'auto', // Important for supporting both images and videos
+    },
+});
 
 const upload = multer({storage})
 

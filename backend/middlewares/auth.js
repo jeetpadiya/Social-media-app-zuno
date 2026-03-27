@@ -6,7 +6,7 @@ const protect = (req,res,next)=>{
     const token = req.headers.authorization?.split(" ")[1]
     
     if(!token){
-        return res.status(401).json({message:"Not authorized"})
+        return res.status(401).json({success:false,message:"Not authorized"})
     }
     try{
    
@@ -15,7 +15,7 @@ const protect = (req,res,next)=>{
         next()
     }
     catch(error){
-        res.status(401).json({message:"Invalid Token"})
+        res.status(401).json({success:false,message:"Invalid Token"})
     }
 }
 
