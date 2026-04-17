@@ -1,9 +1,134 @@
 @import "tailwindcss";
 
-body{
-    background:linear-gradient(to right,#13072e,#110331);
+:root {
+    color-scheme: dark;
+    --bg: #07111f;
+    --bg-secondary: #0d1b2f;
+    --surface: rgba(12, 24, 42, 0.78);
+    --surface-strong: rgba(17, 32, 54, 0.92);
+    --surface-soft: rgba(255, 255, 255, 0.06);
+    --border: rgba(255, 255, 255, 0.1);
+    --text: #f7fafc;
+    --muted: #a6b2c6;
+    --accent: #ff7a59;
+    --accent-strong: #ff9167;
+    --accent-cool: #53d8fb;
+    --shadow: 0 24px 80px rgba(2, 6, 23, 0.45);
+}
+
+html {
+    background:
+        radial-gradient(circle at top left, rgba(83, 216, 251, 0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(255, 122, 89, 0.12), transparent 26%),
+        linear-gradient(160deg, var(--bg) 0%, var(--bg-secondary) 58%, #060d17 100%);
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
+    color: var(--text);
+    background:
+        radial-gradient(circle at 15% 20%, rgba(83, 216, 251, 0.14), transparent 0 24rem),
+        radial-gradient(circle at 85% 12%, rgba(255, 122, 89, 0.12), transparent 0 20rem),
+        linear-gradient(160deg, var(--bg) 0%, var(--bg-secondary) 58%, #060d17 100%);
+    background-attachment: fixed;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: radial-gradient(circle at center, black, transparent 88%);
+    opacity: 0.3;
+}
+
+#root {
+    min-height: 100vh;
+}
+
+.app-frame {
+    position: relative;
+    min-height: 100vh;
+}
+
+.app-frame::before,
+.app-frame::after {
+    content: "";
+    position: fixed;
+    z-index: 0;
+    width: 22rem;
+    height: 22rem;
+    border-radius: 9999px;
+    filter: blur(80px);
+    pointer-events: none;
+}
+
+.app-frame::before {
+    top: 4rem;
+    left: -8rem;
+    background: rgba(83, 216, 251, 0.18);
+}
+
+.app-frame::after {
+    right: -7rem;
+    bottom: 8rem;
+    background: rgba(255, 122, 89, 0.16);
+}
+
+.app-content {
+    position: relative;
+    z-index: 1;
+}
+
+.glass-panel {
+    background: linear-gradient(180deg, rgba(16, 29, 48, 0.84), rgba(8, 17, 31, 0.92));
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(22px);
+}
+
+.glass-panel-soft {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px);
+}
+
+.accent-button {
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    color: white;
+    box-shadow: 0 16px 34px rgba(255, 122, 89, 0.3);
+}
+
+.accent-button:hover {
+    filter: brightness(1.05);
+}
+
+.thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 9999px;
 }
 
 ::-webkit-scrollbar{
-    display: none;
+    width: 8px;
+    height: 8px;
 }

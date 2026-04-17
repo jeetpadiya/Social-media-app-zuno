@@ -2,7 +2,7 @@ import axios from 'axios'
 import cookies from 'js-cookie'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { AuthContext } from './AuthContext';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 export const PostContext = createContext();
 
@@ -135,6 +135,39 @@ const createPost = async(text,image)=>{
         return false
 }
 
+const UpdatePosts = async (id, updates = {}) => {
+  const { text, image } = updates
+  const formData = new FormData()
+
+  if (typeof text === 'string') {
+    formData.append('text', text)
+  }
+
+  if (image) {
+    formData.append('image', image)
+  }
+
+  try {
+    const { data } = await axios.put(`${backendUrl}/api/posts/posts/${id}`, formData, {
+      headers: {
+        Authorization: `Bearer ${utoken}`
+      }
+    })
+
+    if (data.success) {
+      toast.success(data.message || 'Post updated successfully')
+      await Promise.all([fetchPostsofLoginUser()])
+      return true
+    }
+  }
+  catch(error){
+    toast.error(error.response?.data?.message || error.message)
+    console.log(error)
+  }
+
+  return false
+}
+
 const deltePosts = async (id) => {
   try {
     const { data } = await axios.delete(`${backendUrl}/api/posts/posts/${id}`, {
@@ -173,6 +206,7 @@ const values={
     postsComments,
     createPost,
     deltePosts,
+    UpdatePosts,
     Allposts,
     userPosts,
     setUserPosts

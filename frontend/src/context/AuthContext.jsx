@@ -2,7 +2,7 @@ import React, { createContext, useEffect, useState } from 'react'
 import axios from 'axios'
 import Cookies from 'js-cookie'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 
 export const AuthContext = createContext()
 
@@ -94,6 +94,66 @@ const AuthContextProvider = ({ children }) => {
     }
   }
 
+
+  //forgot password
+
+
+  const searchUsers = async (query) => {
+    try {
+      const trimmedQuery = query?.trim()
+
+      if (!trimmedQuery) {
+        return []
+      }
+
+      const { data } = await axios.get(
+        `${backendUrl}/api/user/search?username=${encodeURIComponent(trimmedQuery)}`
+      )
+      if (data.success) {
+        return data.users
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('User search failed.')
+    }
+    return []
+  }
+
+  const updateUserProfile = async ({ username, email, avatarFile }) => {
+    try {
+      const formData = new FormData()
+
+      if (typeof username === 'string' && username.trim()) {
+        formData.append('username', username.trim())
+      }
+
+      if (typeof email === 'string' && email.trim()) {
+        formData.append('email', email.trim())
+      }
+
+      if (avatarFile) {
+        formData.append('image', avatarFile)
+      }
+
+      const { data } = await axios.put(
+        `${backendUrl}/api/user/me`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      )
+
+      if (data.success) {
+        setUser(data.currentUser)
+        toast.success(data.message || 'Profile updated successfully!')
+        return true
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error(err.response?.data?.message || 'Profile update failed.')
+    }
+
+    return false
+  }
+
   // LOGOUT
   const handleLogout = () => {
     Cookies.remove('token')
@@ -110,6 +170,8 @@ const AuthContextProvider = ({ children }) => {
     user,
     handleRegister,
     handleLogin,
+    updateUserProfile,
+    searchUsers,
     handleLogout,
   }
 

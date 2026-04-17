@@ -1,44 +1,30 @@
-import { useContext, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { AuthContext } from "../context/AuthContext";
 import { PostContext } from "../context/PostContext";
+import CommentComponent from "../components/CommentComponent";
 import SideBar from "../components/SideBar";
 import {FaCommentDots, FaThumbsUp} from "react-icons/fa"
-import { IoIosAttach } from 'react-icons/io';
-import { IoSend }from 'react-icons/io5';
-
-
-const formatTimeAgo = (timestamp) => {
-  if (!timestamp) return 'Just now'
-
-  const diffInSeconds = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000))
-
-  if (diffInSeconds < 60) return 'Just now'
-
-  const intervals = [
-    { label: 'y', seconds: 31536000 },
-    { label: 'mo', seconds: 2592000 },
-    { label: 'd', seconds: 86400 },
-    { label: 'h', seconds: 3600 },
-    { label: 'm', seconds: 60 },
-  ]
-
-  for (const interval of intervals) {
-    const value = Math.floor(diffInSeconds / interval.seconds)
-    if (value >= 1) return `${value}${interval.label} ago`
-  }
-
-  return 'Just now'
-}
 
 
 const PostPage = () => {
+  const POSTS_PER_PAGE = 5
 
   const navigate = useNavigate()
   const {user} = useContext(AuthContext)
   const {Allposts,likePosts,postsComments} =  useContext(PostContext)
 
 const [comments, setComments] = useState({});
+const [currentPage, setCurrentPage] = useState(1)
+
+  const orderedPosts = Allposts.slice().reverse()
+  const totalPages = Math.max(1, Math.ceil(orderedPosts.length / POSTS_PER_PAGE))
+  const startIndex = (currentPage - 1) * POSTS_PER_PAGE
+  const paginatedPosts = orderedPosts.slice(startIndex, startIndex + POSTS_PER_PAGE)
+
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(prev, totalPages))
+  }, [totalPages])
 
 
   const handleChange = (e,postId)=>{
@@ -69,16 +55,28 @@ const [comments, setComments] = useState({});
     navigate(`/users/${targetUserId}`)
   }
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
 
   return (
-    <div className="flex flex-col md:flex-row overflow-auto">
-      <div className="hidden md:block p-3 ">
+    <div className="mx-auto flex max-w-7xl flex-col overflow-auto px-4 py-6 md:flex-row md:gap-6">
+      <div className="hidden md:block md:shrink-0">
         <SideBar/>
       </div>
       <div className="flex-1 p-4">
-        <div className="mx-auto h-[87vh] max-w-screen-sm space-y-6 overflow-y-auto pr-1 text-white">
-          {Allposts.slice().reverse().map((post,index)=>(
-            <div key={index} className="space-y-4 rounded-2xl bg-gradient-to-r from-[#13072e] to-[#3f2182] p-4 shadow-lg shadow-black/20">
+        <div className="mx-auto mb-6 max-w-screen-sm rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,122,89,0.12),rgba(83,216,251,0.08))] p-6 shadow-[0_18px_80px_rgba(2,6,23,0.28)]">
+          <p className="text-xs uppercase tracking-[0.32em] text-slate-300">Community Feed</p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-white">Stories, snapshots, and honest updates.</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+            A calmer feed with stronger hierarchy helps the content feel intentional and premium.
+          </p>
+        </div>
+        <div className="mx-auto max-w-screen-sm space-y-6 pr-2 text-white">
+          {paginatedPosts.map((post,index)=>(
+            <div key={index} className="glass-panel space-y-5 rounded-[30px] p-5">
                 {(() => {
                   const currentUserId = user?._id || user?.id
                   const hasLiked = (post.likes || []).some((likedUserId) => {
@@ -89,12 +87,13 @@ const [comments, setComments] = useState({});
 
                   return (
                     <>
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex  justify-center items-center text-lg font-bold text-gray-600">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center space-x-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-lg font-bold text-gray-600 ring-1 ring-white/10">
                     <img
                       src={post.user?.avatar ?? ""}
                       alt="User DP"
-                      className="w-full h-full cursor-pointer object-cover rounded-full"
+                      className="h-full w-full cursor-pointer rounded-2xl object-cover"
                       onClick={() => openUserProfile(post.user)}
                     />
                   </div>
@@ -102,95 +101,100 @@ const [comments, setComments] = useState({});
                     <button
                       type="button"
                       onClick={() => openUserProfile(post.user)}
-                      className="text-left text-lg font-bold transition hover:text-blue-300"
+                      className="text-left text-lg font-semibold transition hover:text-sky-300"
                     >
                       {post.user?.username || "Unknown user"}
                     </button>
+                    <p className="text-sm text-slate-400">Sharing something with the community</p>
                   </div>
                 </div>
-                <p className="text-white">{post.text}</p>
+                <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-300">
+                  Fresh post
+                </span>
+                </div>
+                <p className="text-[15px] leading-7 text-slate-100">{post.text}</p>
                 {post.image && (
-                  <img src= {post.image} alt="Post Image" className="w-full rounded-lg object-cover"/>
+                  <div className="overflow-hidden rounded-[26px] border border-white/10 bg-white/5">
+                    <img src= {post.image} alt="Post Image" className="max-h-[28rem] w-full object-cover"/>
+                  </div>
                 )}
-                <div className="flex justify-start gap-4 text-white text-sm items-center">
-                  <div onClick={()=>likePosts(post._id)} className={`flex items-center gap-1 rounded-full px-2 py-1 transition ${hasLiked ? 'bg-blue-500/20 text-blue-300' : ''}`}>
-                    <FaThumbsUp className={`cursor-pointer text-xl transition ${hasLiked ? 'text-blue-400' : 'hover:text-blue-500'}`}/>
+                <div className="flex flex-wrap justify-start gap-3 text-sm text-white">
+                  <div onClick={()=>likePosts(post._id)} className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 transition ${hasLiked ? 'border-sky-300/25 bg-sky-400/15 text-sky-200' : 'border-white/10 bg-white/6 text-slate-200 hover:bg-white/10'}`}>
+                    <FaThumbsUp className={`text-base transition ${hasLiked ? 'text-sky-300' : 'hover:text-sky-300'}`}/>
                     <span className={hasLiked ? 'font-semibold text-blue-200' : ''}>
                       {post.likes?.length || 0} Likes
                     </span>
                   </div>
-                   <div className="flex items-center  gap-1">
-                    <FaCommentDots className="text-xl cursor-pointer"/>
+                   <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-4 py-2 text-slate-200">
+                    <FaCommentDots className="text-base"/>
                     <span>
                       {post.comments?.length || 0} Comments
                     </span>
                   </div>
                 </div>
-                <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-white">Comments</p>
-                  <span className="text-xs uppercase tracking-wide text-gray-300">
-                    {(post.comments || []).length} total
-                  </span>
-                </div>
-                <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
-                {(post.comments || []).slice(0,3).map((comment,index)=>(
-                    <div key={index} className="rounded-2xl bg-black/15 p-3">
-                      <div className="mb-2 flex items-center gap-3">
-                        <div className="h-9 w-9 overflow-hidden rounded-full bg-white/10">
-                          <img
-                            src={comment.user?.avatar ?? ""}
-                            alt={comment.user?.username || "Comment user"}
-                            className="h-full w-full cursor-pointer object-cover"
-                            onClick={() => openUserProfile(comment.user)}
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => openUserProfile(comment.user)}
-                            className="truncate text-left text-sm font-semibold text-white transition hover:text-blue-300"
-                          >
-                            {comment.user?.username || "Unknown user"}
-                          </button>
-                          <p className="text-xs text-gray-300">
-                            {formatTimeAgo(comment.createdAt)}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="pl-12 text-sm leading-6 text-gray-100">
-                        {comment.text}
-                      </p>
-                    </div>
-                ))}
-                {(post.comments || []).length === 0 && (
-                  <p className="rounded-xl bg-black/10 px-3 py-3 text-sm text-gray-300">
-                    No comments yet. Be the first to say something.
-                  </p>
-                )}
-                </div>
-                </div>
-                <form onSubmit={(e)=>handleSubmit(e,post._id)} className="mt-4 flex items-center gap-2 text-black">
-                    <div className="w-8 h-8 hidden md:block rounded-full bg-gray-200 overflow-hidden">
-                      <img src={user?.avatar ?? ""} alt="User Avatar" className="w-full h-full object-cover"/>
-                    </div>
-                    <input type="text"value={comments[post._id || ""]} onChange={e=>handleChange(e,post._id)} name="text" placeholder="Write Your Comment" className="flex-1 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-blue-300"/>
-
-                    <div className="flex space-x-2">
-                      <button type="button" className="p-2 text-2xl rounded-full  text-white" title="Attach File">
-                      <IoIosAttach/>
-                      </button>
-                      <button type="submit" className="rounded-full p-2 text-2xl text-white transition hover:bg-[#13072e]" title="Post Comment">
-                      <IoSend className="cursor-pointer"/>
-                      </button>
-                      
-                    </div>
-                </form>
+                <CommentComponent
+                  comments={post.comments || []}
+                  postId={post._id}
+                  currentUser={user}
+                  draftComment={comments[post._id] || ""}
+                  onCommentChange={handleChange}
+                  onCommentSubmit={handleSubmit}
+                  onOpenUserProfile={openUserProfile}
+                />
                     </>
                   )
                 })()}
             </div>
           ))}
+          {orderedPosts.length === 0 && (
+            <div className="glass-panel rounded-[30px] p-8 text-center">
+              <p className="text-lg font-semibold text-white">No posts yet</p>
+              <p className="mt-2 text-sm text-slate-400">Once people start sharing, the feed will appear here.</p>
+            </div>
+          )}
+          {orderedPosts.length > POSTS_PER_PAGE && (
+            <div className="glass-panel flex flex-col items-center justify-between gap-4 rounded-[28px] px-5 py-4 text-sm text-slate-300 sm:flex-row">
+              <p>
+                Showing <span className="font-semibold text-white">{startIndex + 1}</span> to{" "}
+                <span className="font-semibold text-white">
+                  {Math.min(startIndex + POSTS_PER_PAGE, orderedPosts.length)}
+                </span>{" "}
+                of <span className="font-semibold text-white">{orderedPosts.length}</span> posts
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+                {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => handlePageChange(page)}
+                    className={`h-10 w-10 rounded-full border text-sm font-semibold transition ${
+                      currentPage === page
+                        ? 'border-sky-300/30 bg-sky-400/15 text-sky-100'
+                        : 'border-white/10 bg-white/6 text-white hover:bg-white/10'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

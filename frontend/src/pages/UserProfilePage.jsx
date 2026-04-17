@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import SideBar from '../components/SideBar'
 import Profile from '../components/Profile'
 import { AuthContext } from '../context/AuthContext'
@@ -49,11 +49,11 @@ const UserProfilePage = () => {
   }, [backendUrl, id, navigate, user])
 
   return (
-    <div className="flex flex-col overflow-auto md:flex-row">
-      <div className="hidden p-3 md:block">
+    <div className="mx-auto flex max-w-7xl flex-col overflow-auto px-4 py-6 md:flex-row md:gap-6">
+      <div className="hidden md:block md:shrink-0">
         <SideBar />
       </div>
-      <div className="flex-1 p-4">
+      <div className="flex-1">
         {loading ? (
           <div className="p-6 text-white">Loading profile…</div>
         ) : (

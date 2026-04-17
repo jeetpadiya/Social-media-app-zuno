@@ -3,11 +3,11 @@ import Profile from '../components/Profile'
 
 const ProfilePage = () => {
   return (
-    <div className="flex flex-col overflow-auto md:flex-row">
-      <div className="hidden p-3 md:block">
+    <div className="mx-auto flex max-w-7xl flex-col overflow-auto px-4 py-6 md:flex-row md:gap-6">
+      <div className="hidden md:block md:shrink-0">
         <SideBar />
       </div>
-      <div className="flex-1 p-4">
+      <div className="flex-1">
         <Profile />
       </div>
     </div>
