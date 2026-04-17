@@ -19,7 +19,6 @@ const SideBar = () => {
 
   const {user,handleLogout,searchUsers} = useContext(AuthContext) 
   
-      if (!user) return null;
 
   const isActive = (path) => location.pathname === path
   const navItemClass = (path) =>
@@ -76,6 +75,8 @@ const SideBar = () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [])
+
+        if (!user) return null;
 
   const handleOpenProfile = (profileId) => {
     setSearchQuery('')
