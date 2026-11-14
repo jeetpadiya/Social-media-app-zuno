@@ -12,6 +12,7 @@ import {
   Send,
 } from 'lucide-react'
 import Avatar from './Avatar'
+import ImageLightbox from './ImageLightbox'
 import { AuthContext } from '../../context/AuthContext'
 import { PostContext } from '../../context/PostContext'
 import { toast } from 'sonner'
@@ -36,16 +37,18 @@ const PostCard = ({
   isOwner = false,
 }) => {
   const navigate = useNavigate()
-  const { user } = useContext(AuthContext)
+  const { user, isPostBookmarked, toggleBookmark } = useContext(AuthContext)
   const { likePosts, deltePosts, postsComments } = useContext(PostContext)
 
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
-  const [isBookmarked, setIsBookmarked] = useState(false)
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [repostCount, setRepostCount] = useState(0)
   const [hasReposted, setHasReposted] = useState(false)
+
+  const isBookmarked = isPostBookmarked(post?._id)
 
   const currentUserId = (user?._id || user?.id)?.toString()
   const postAuthor = post?.user || {}
@@ -82,10 +85,11 @@ const PostCard = ({
     toast.success(hasReposted ? 'Repost removed' : 'Reposted to your feed')
   }
 
-  const handleBookmark = (e) => {
+  const handleBookmark = async (e) => {
     e.stopPropagation()
-    setIsBookmarked((prev) => !prev)
-    toast.success(isBookmarked ? 'Removed from bookmarks' : 'Added to bookmarks')
+    if (post?._id) {
+      await toggleBookmark(post._id)
+    }
   }
 
   const handleShare = async (e) => {
@@ -127,7 +131,9 @@ const PostCard = ({
   }
 
   const handlePostClick = () => {
-    setShowComments((prev) => !prev)
+    if (post?._id) {
+      navigate(`/posts/${post._id}`)
+    }
   }
 
   const username = postAuthor?.username || 'user'
@@ -225,17 +231,27 @@ const PostCard = ({
 
         {/* Media */}
         {post?.image && (
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="mt-3 overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface-hover)]"
-          >
-            <img
+          <>
+            <div
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsLightboxOpen(true)
+              }}
+              className="mt-3 overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface-hover)] cursor-pointer"
+            >
+              <img
+                src={post.image}
+                alt="Post attachment"
+                className="max-h-[500px] w-full object-cover transition-opacity duration-150 hover:opacity-95"
+                loading="lazy"
+              />
+            </div>
+            <ImageLightbox
               src={post.image}
-              alt="Post attachment"
-              className="max-h-[500px] w-full object-cover"
-              loading="lazy"
+              isOpen={isLightboxOpen}
+              onClose={() => setIsLightboxOpen(false)}
             />
-          </div>
+          </>
         )}
 
         {/* Action row: comment, repost, like, bookmark */}

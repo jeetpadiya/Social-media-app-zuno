@@ -9,14 +9,13 @@ import ActionButton from './ActionButton'
 const RightSidebar = () => {
   const navigate = useNavigate()
   const searchRef = useRef(null)
-  const { user, searchUsers } = useContext(AuthContext)
+  const { user, searchUsers, isUserFollowing, toggleFollow } = useContext(AuthContext)
   const { Allposts } = useContext(PostContext)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
-  const [followedUsers, setFollowedUsers] = useState({})
 
   const currentUserId = (user?._id || user?.id)?.toString()
 
@@ -81,14 +80,6 @@ const RightSidebar = () => {
     } else {
       navigate(`/users/${targetUserId}`)
     }
-  }
-
-  const toggleFollow = (uid, e) => {
-    e.stopPropagation()
-    setFollowedUsers((prev) => ({
-      ...prev,
-      [uid]: !prev[uid],
-    }))
   }
 
   const trends = [
@@ -180,7 +171,7 @@ const RightSidebar = () => {
               const uid = su._id || su.id
               const suName = su.username || 'user'
               const suHandle = `@${suName.toLowerCase().replace(/\s+/g, '')}`
-              const isFollowing = !!followedUsers[uid]
+              const isFollowing = isUserFollowing(uid)
 
               return (
                 <div
@@ -203,7 +194,10 @@ const RightSidebar = () => {
                     variant={isFollowing ? 'secondary' : 'dark'}
                     size="sm"
                     pill
-                    onClick={(e) => toggleFollow(uid, e)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleFollow(uid)
+                    }}
                   >
                     {isFollowing ? 'Following' : 'Follow'}
                   </ActionButton>

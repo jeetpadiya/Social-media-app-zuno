@@ -4,6 +4,7 @@ import {
   Home,
   Search,
   Bell,
+  Bookmark,
   PlusCircle,
   User as UserIcon,
   LogOut,
@@ -19,7 +20,7 @@ import ActionButton from './ActionButton'
 const Sidebar = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, handleLogout } = useContext(AuthContext)
+  const { user, handleLogout, unreadCount } = useContext(AuthContext)
   const { theme, toggleTheme } = useTheme()
 
   if (!user) return null
@@ -27,7 +28,8 @@ const Sidebar = () => {
   const navItems = [
     { label: 'Home', path: '/posts', icon: Home },
     { label: 'Explore', path: '/posts?tab=explore', icon: Search },
-    { label: 'Notifications', path: '/posts?tab=notifications', icon: Bell },
+    { label: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
+    { label: 'Bookmarks', path: '/bookmarks', icon: Bookmark },
     { label: 'Create', path: '/create-post', icon: PlusCircle },
     { label: 'Profile', path: '/profile', icon: UserIcon },
   ]
@@ -63,23 +65,33 @@ const Sidebar = () => {
           {navItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item.path)
+            const hasBadge = typeof item.badge === 'number' && item.badge > 0
             return (
               <button
                 key={item.label}
                 type="button"
                 onClick={() => navigate(item.path)}
-                className={`group flex items-center gap-4 rounded-full px-4 py-3 text-[17px] transition-colors duration-150 hover:bg-[var(--surface-hover)] ${
+                className={`group flex items-center justify-between rounded-full px-4 py-3 text-[17px] transition-colors duration-150 hover:bg-[var(--surface-hover)] ${
                   active
                     ? 'font-bold text-[var(--accent)]'
                     : 'font-normal text-[var(--text)]'
                 }`}
               >
-                <Icon
-                  className={`h-6 w-6 stroke-[2] shrink-0 ${
-                    active ? 'text-[var(--accent)]' : 'text-[var(--text)]'
-                  }`}
-                />
-                <span className="truncate">{item.label}</span>
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="relative shrink-0">
+                    <Icon
+                      className={`h-6 w-6 stroke-[2] ${
+                        active ? 'text-[var(--accent)]' : 'text-[var(--text)]'
+                      }`}
+                    />
+                    {hasBadge && (
+                      <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-bold text-white">
+                        {item.badge > 99 ? '99+' : item.badge}
+                      </span>
+                    )}
+                  </div>
+                  <span className="truncate">{item.label}</span>
+                </div>
               </button>
             )
           })}

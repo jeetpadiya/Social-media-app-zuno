@@ -25,7 +25,32 @@ const userSchema = new mongoose.Schema({
     },
     avatar: {
         type: String
-    }
+    },
+    bio: {
+        type: String,
+        default: '',
+        maxlength: 160
+    },
+    location: {
+        type: String,
+        default: ''
+    },
+    website: {
+        type: String,
+        default: ''
+    },
+    followers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    following: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    bookmarks: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Post'
+    }]
 }, { timestamps: true })
 
 const userModel = mongoose.models.User || mongoose.model("User", userSchema)

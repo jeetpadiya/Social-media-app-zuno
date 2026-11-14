@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { Image as ImageIcon, X } from 'lucide-react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
+import { Image as ImageIcon, X, Check } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { PostContext } from '../context/PostContext'
 import MainLayout from '../components/MainLayout'
@@ -10,18 +10,30 @@ import { PostSkeleton } from '../components/Skeleton'
 import EditPopup from '../popups/EditPopup'
 
 const PostPage = () => {
-  const POSTS_PER_PAGE = 10
+  const INITIAL_BATCH = 8
+  const BATCH_SIZE = 6
 
   const { user } = useContext(AuthContext)
   const {
     Allposts,
+    followingPosts,
+    fetchFollowingPosts,
     createPost,
     UpdatePosts,
     loadingPosts,
+    loadingFollowing,
   } = useContext(PostContext)
 
   const [activeTab, setActiveTab] = useState('foryou')
-  const [currentPage, setCurrentPage] = useState(1)
+  const [visibleCount, setVisibleCount] = useState(INITIAL_BATCH)
+  const sentinelRef = useRef(null)
+
+  useEffect(() => {
+    if (activeTab === 'following') {
+      fetchFollowingPosts()
+    }
+    setVisibleCount(INITIAL_BATCH)
+  }, [activeTab])
 
   // Quick composer state
   const [composerText, setComposerText] = useState('')
@@ -34,14 +46,33 @@ const PostPage = () => {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isSavingEdit, setIsSavingEdit] = useState(false)
 
-  const orderedPosts = (Array.isArray(Allposts) ? Allposts : []).slice().reverse()
-  const totalPages = Math.max(1, Math.ceil(orderedPosts.length / POSTS_PER_PAGE))
-  const startIndex = (currentPage - 1) * POSTS_PER_PAGE
-  const paginatedPosts = orderedPosts.slice(startIndex, startIndex + POSTS_PER_PAGE)
+  const activePostList = activeTab === 'following' ? followingPosts : Allposts
+  const orderedPosts = (Array.isArray(activePostList) ? activePostList : []).slice().reverse()
+  const visiblePosts = orderedPosts.slice(0, visibleCount)
+  const hasMore = visibleCount < orderedPosts.length
 
+  // IntersectionObserver for Infinite Scroll
   useEffect(() => {
-    setCurrentPage((prev) => Math.min(prev, totalPages))
-  }, [totalPages])
+    if (!sentinelRef.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => {
+            if (prev < orderedPosts.length) {
+              return prev + BATCH_SIZE
+            }
+            return prev
+          })
+        }
+      },
+      { rootMargin: '350px' }
+    )
+
+    observer.observe(sentinelRef.current)
+
+    return () => observer.disconnect()
+  }, [orderedPosts.length, visibleCount])
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
@@ -212,14 +243,14 @@ const PostPage = () => {
 
       {/* Feed list */}
       <section>
-        {loadingPosts && orderedPosts.length === 0 ? (
+        {(activeTab === 'following' ? loadingFollowing : loadingPosts) && orderedPosts.length === 0 ? (
           <div>
             <PostSkeleton />
             <PostSkeleton />
             <PostSkeleton />
           </div>
-        ) : paginatedPosts.length > 0 ? (
-          paginatedPosts.map((post) => (
+        ) : visiblePosts.length > 0 ? (
+          visiblePosts.map((post) => (
             <PostCard
               key={post._id}
               post={post}
@@ -228,46 +259,36 @@ const PostPage = () => {
           ))
         ) : (
           <div className="p-8 text-center text-[var(--muted)]">
-            <p className="text-[16px] font-bold text-[var(--text)]">No posts yet</p>
+            <p className="text-[16px] font-bold text-[var(--text)]">
+              {activeTab === 'following'
+                ? 'No posts from accounts you follow yet'
+                : 'No posts yet'}
+            </p>
             <p className="mt-1 text-[14px]">
-              When people share moments, they will appear right here in your feed.
+              {activeTab === 'following'
+                ? 'When you follow creators from the Explore or "For you" feed, their posts will show up here.'
+                : 'When people share moments, they will appear right here in your feed.'}
             </p>
           </div>
         )}
       </section>
 
-      {/* Pagination controls */}
-      {totalPages > 1 && (
-        <nav
-          aria-label="Feed pagination"
-          className="flex items-center justify-between border-b border-[var(--border)] p-4 text-[14px] text-[var(--muted)]"
-        >
-          <ActionButton
-            type="button"
-            variant="secondary"
-            size="sm"
-            pill
-            disabled={currentPage === 1}
-            onClick={() => handlePageChange(currentPage - 1)}
-          >
-            Previous
-          </ActionButton>
+      {/* Infinite scroll sentinel */}
+      {hasMore && (
+        <div ref={sentinelRef} className="py-2">
+          <PostSkeleton />
+        </div>
+      )}
 
-          <span className="text-[13px] font-semibold text-[var(--text)]">
-            Page {currentPage} of {totalPages}
-          </span>
-
-          <ActionButton
-            type="button"
-            variant="secondary"
-            size="sm"
-            pill
-            disabled={currentPage === totalPages}
-            onClick={() => handlePageChange(currentPage + 1)}
-          >
-            Next
-          </ActionButton>
-        </nav>
+      {/* All caught up footer */}
+      {!hasMore && orderedPosts.length > 0 && (
+        <div className="flex flex-col items-center justify-center p-8 text-center text-[var(--muted)] border-b border-[var(--border)]">
+          <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] text-[var(--accent)]">
+            <Check className="h-4 w-4 stroke-[2.5]" />
+          </div>
+          <p className="text-[14px] font-bold text-[var(--text)]">You're all caught up</p>
+          <p className="text-[13px] text-[var(--muted)]">You've seen all recent posts in this feed.</p>
+        </div>
       )}
 
       {/* Edit Post Modal */}

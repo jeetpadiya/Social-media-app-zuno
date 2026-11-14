@@ -13,6 +13,7 @@ const AuthContextProvider = ({ children }) => {
   // initialize token state from cookie
   const [token, setToken] = useState(!!Cookies.get('token'))
   const [user, setUser] = useState(null)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   // keep axios Authorization header in sync whenever auth state changes
   useEffect(() => {
@@ -23,6 +24,17 @@ const AuthContextProvider = ({ children }) => {
       delete axios.defaults.headers.common['Authorization']
     }
   }, [token])
+
+  const fetchUnreadCount = async () => {
+    try {
+      const { data } = await axios.get(`${backendUrl}/api/notifications`)
+      if (data.success && typeof data.unreadCount === 'number') {
+        setUnreadCount(data.unreadCount)
+      }
+    } catch (err) {
+      // silent fail
+    }
+  }
 
   // fetch /api/user/me when token flips to true
   const fetchCurrentUserDetails = async () => {
@@ -41,6 +53,7 @@ const AuthContextProvider = ({ children }) => {
   useEffect(() => {
     if (token) {
       fetchCurrentUserDetails()
+      fetchUnreadCount()
     }
   }, [token])
 
@@ -119,7 +132,7 @@ const AuthContextProvider = ({ children }) => {
     return []
   }
 
-  const updateUserProfile = async ({ username, email, avatarFile }) => {
+  const updateUserProfile = async ({ username, email, bio, location, website, avatarFile }) => {
     try {
       const formData = new FormData()
 
@@ -129,6 +142,18 @@ const AuthContextProvider = ({ children }) => {
 
       if (typeof email === 'string' && email.trim()) {
         formData.append('email', email.trim())
+      }
+
+      if (typeof bio === 'string') {
+        formData.append('bio', bio.trim())
+      }
+
+      if (typeof location === 'string') {
+        formData.append('location', location.trim())
+      }
+
+      if (typeof website === 'string') {
+        formData.append('website', website.trim())
       }
 
       if (avatarFile) {
@@ -164,15 +189,110 @@ const AuthContextProvider = ({ children }) => {
     navigate('/login')
   }
 
+  const isUserFollowing = (targetUserId) => {
+    if (!user || !targetUserId) return false
+    const tid = (targetUserId?._id || targetUserId?.id || targetUserId)?.toString()
+    return (user.following || []).some((item) => {
+      const iid = (item?._id || item?.id || item)?.toString()
+      return iid === tid
+    })
+  }
+
+  const toggleFollow = async (targetUserId) => {
+    const tid = (targetUserId?._id || targetUserId?.id || targetUserId)?.toString()
+    const currentUserId = (user?._id || user?.id)?.toString()
+
+    if (!currentUserId || !tid || currentUserId === tid) return { success: false }
+
+    const alreadyFollowing = isUserFollowing(tid)
+    const previousFollowing = user?.following || []
+
+    const updatedFollowing = alreadyFollowing
+      ? previousFollowing.filter((item) => {
+          const iid = (item?._id || item?.id || item)?.toString()
+          return iid !== tid
+        })
+      : [...previousFollowing, tid]
+
+    setUser((prev) => (prev ? { ...prev, following: updatedFollowing } : prev))
+
+    try {
+      const { data } = await axios.put(`${backendUrl}/api/user/${tid}/follow`)
+      if (data.success) {
+        toast.success(data.message)
+        if (Array.isArray(data.currentUserFollowing)) {
+          setUser((prev) => (prev ? { ...prev, following: data.currentUserFollowing } : prev))
+        }
+        return {
+          success: true,
+          isFollowing: data.isFollowing,
+          followersCount: data.followersCount,
+        }
+      }
+    } catch (err) {
+      setUser((prev) => (prev ? { ...prev, following: previousFollowing } : prev))
+      toast.error(err.response?.data?.message || 'Failed to update follow.')
+    }
+    return { success: false, isFollowing: alreadyFollowing }
+  }
+
+  const isPostBookmarked = (postId) => {
+    if (!user || !postId) return false
+    const pid = (postId?._id || postId?.id || postId)?.toString()
+    return (user.bookmarks || []).some((item) => {
+      const iid = (item?._id || item?.id || item)?.toString()
+      return iid === pid
+    })
+  }
+
+  const toggleBookmark = async (postId) => {
+    const pid = (postId?._id || postId?.id || postId)?.toString()
+    if (!user || !pid) return { success: false }
+
+    const alreadyBookmarked = isPostBookmarked(pid)
+    const previousBookmarks = user?.bookmarks || []
+
+    const updatedBookmarks = alreadyBookmarked
+      ? previousBookmarks.filter((item) => {
+          const iid = (item?._id || item?.id || item)?.toString()
+          return iid !== pid
+        })
+      : [...previousBookmarks, pid]
+
+    setUser((prev) => (prev ? { ...prev, bookmarks: updatedBookmarks } : prev))
+
+    try {
+      const { data } = await axios.put(`${backendUrl}/api/posts/posts/${pid}/bookmark`)
+      if (data.success) {
+        toast.success(data.message)
+        if (Array.isArray(data.bookmarks)) {
+          setUser((prev) => (prev ? { ...prev, bookmarks: data.bookmarks } : prev))
+        }
+        return { success: true, isBookmarked: data.isBookmarked }
+      }
+    } catch (err) {
+      setUser((prev) => (prev ? { ...prev, bookmarks: previousBookmarks } : prev))
+      toast.error(err.response?.data?.message || 'Failed to update bookmark.')
+    }
+    return { success: false, isBookmarked: alreadyBookmarked }
+  }
+
   const value = {
     backendUrl,
     token,
     user,
+    unreadCount,
+    setUnreadCount,
+    fetchUnreadCount,
     handleRegister,
     handleLogin,
     updateUserProfile,
     searchUsers,
     handleLogout,
+    isUserFollowing,
+    toggleFollow,
+    isPostBookmarked,
+    toggleBookmark,
   }
 
   return (

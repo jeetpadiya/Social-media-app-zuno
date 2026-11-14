@@ -6,6 +6,9 @@ import Avatar from '../components/Avatar'
 const EditProfilePopup = ({ user, isOpen, isSaving, onClose, onSave }) => {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
+  const [bio, setBio] = useState('')
+  const [location, setLocation] = useState('')
+  const [website, setWebsite] = useState('')
   const [avatarFile, setAvatarFile] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState('')
 
@@ -13,6 +16,9 @@ const EditProfilePopup = ({ user, isOpen, isSaving, onClose, onSave }) => {
     if (!isOpen || !user) return
     setUsername(user.username || '')
     setEmail(user.email || '')
+    setBio(user.bio || '')
+    setLocation(user.location || '')
+    setWebsite(user.website || '')
     setAvatarFile(null)
     setAvatarPreview(user.avatar || '')
   }, [isOpen, user])
@@ -33,6 +39,9 @@ const EditProfilePopup = ({ user, isOpen, isSaving, onClose, onSave }) => {
     const saved = await onSave({
       username,
       email,
+      bio,
+      location,
+      website,
       avatarFile,
     })
     if (saved) {
@@ -44,7 +53,7 @@ const EditProfilePopup = ({ user, isOpen, isSaving, onClose, onSave }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--modal-backdrop)] px-4">
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative z-10 w-full max-w-lg rounded-[16px] border border-[var(--border)] bg-[var(--surface)] p-5 text-[var(--text)] transition-fast">
+      <div className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[16px] border border-[var(--border)] bg-[var(--surface)] p-5 text-[var(--text)] transition-fast">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
           <div className="flex items-center gap-3">
@@ -108,6 +117,52 @@ const EditProfilePopup = ({ user, isOpen, isSaving, onClose, onSave }) => {
               placeholder="Username"
               className="w-full rounded-[8px] border border-[var(--border)] bg-transparent p-3 text-[15px] text-[var(--text)] placeholder-[var(--muted)] focus:border-[var(--accent)] focus:outline-none"
             />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[13px] font-bold text-[var(--muted)]">
+                Bio
+              </label>
+              <span className="text-[12px] text-[var(--muted)]">
+                {bio.length}/160
+              </span>
+            </div>
+            <textarea
+              rows={3}
+              maxLength={160}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Tell the world about yourself"
+              className="w-full resize-none rounded-[8px] border border-[var(--border)] bg-transparent p-3 text-[15px] text-[var(--text)] placeholder-[var(--muted)] focus:border-[var(--accent)] focus:outline-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[13px] font-bold text-[var(--muted)] mb-1">
+                Location
+              </label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. San Francisco, CA"
+                className="w-full rounded-[8px] border border-[var(--border)] bg-transparent p-3 text-[15px] text-[var(--text)] placeholder-[var(--muted)] focus:border-[var(--accent)] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[13px] font-bold text-[var(--muted)] mb-1">
+                Website
+              </label>
+              <input
+                type="text"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="https://yourlink.com"
+                className="w-full rounded-[8px] border border-[var(--border)] bg-transparent p-3 text-[15px] text-[var(--text)] placeholder-[var(--muted)] focus:border-[var(--accent)] focus:outline-none"
+              />
+            </div>
           </div>
 
           <div>

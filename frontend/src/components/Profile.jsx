@@ -7,6 +7,8 @@ import {
   List,
   LogOut,
   Mail,
+  MapPin,
+  Link as LinkIcon,
   MoreHorizontal,
   Trash2,
   Edit3,
@@ -21,7 +23,7 @@ import EditProfilePopup from '../popups/EditProfilePopup'
 
 const Profile = ({ profileUser, posts, isOwnProfile = true }) => {
   const navigate = useNavigate()
-  const { user, handleLogout, updateUserProfile } = useContext(AuthContext)
+  const { user, handleLogout, updateUserProfile, isUserFollowing, toggleFollow } = useContext(AuthContext)
   const { userPosts, deltePosts, UpdatePosts } = useContext(PostContext)
 
   const displayUser = profileUser || user
@@ -33,7 +35,24 @@ const Profile = ({ profileUser, posts, isOwnProfile = true }) => {
 
   const [activeTab, setActiveTab] = useState('posts')
   const [viewMode, setViewMode] = useState('list') // 'list' | 'grid'
-  const [isFollowing, setIsFollowing] = useState(false)
+
+  const targetUserId = (displayUser?._id || displayUser?.id)?.toString()
+  const isFollowing = isUserFollowing(targetUserId)
+  const [localFollowerDelta, setLocalFollowerDelta] = useState(0)
+  const [isFollowLoading, setIsFollowLoading] = useState(false)
+
+  const handleToggleFollow = async () => {
+    if (!targetUserId || isFollowLoading) return
+    setIsFollowLoading(true)
+    const result = await toggleFollow(targetUserId)
+    setIsFollowLoading(false)
+    if (result?.success) {
+      setLocalFollowerDelta((prev) => (result.isFollowing ? prev + 1 : prev - 1))
+    }
+  }
+
+  const followersCount = Math.max(0, (displayUser?.followers?.length || 0) + localFollowerDelta)
+  const followingCount = displayUser?.following?.length || 0
 
   // Edit popups state
   const [selectedPost, setSelectedPost] = useState(null)
@@ -159,7 +178,8 @@ const Profile = ({ profileUser, posts, isOwnProfile = true }) => {
                 variant={isFollowing ? 'secondary' : 'dark'}
                 size="sm"
                 pill
-                onClick={() => setIsFollowing((prev) => !prev)}
+                disabled={isFollowLoading}
+                onClick={handleToggleFollow}
               >
                 {isFollowing ? 'Following' : 'Follow'}
               </ActionButton>
@@ -175,8 +195,38 @@ const Profile = ({ profileUser, posts, isOwnProfile = true }) => {
           <p className="text-[14px] text-[var(--muted)] font-normal">{handle}</p>
         </div>
 
+        {/* Bio */}
+        {displayUser.bio && (
+          <p className="mt-2.5 whitespace-pre-wrap break-words text-[15px] text-[var(--text)] font-normal leading-normal">
+            {displayUser.bio}
+          </p>
+        )}
+
         {/* Bio / Info */}
         <div className="mt-3 flex flex-wrap gap-y-1 gap-x-4 text-[14px] text-[var(--muted)]">
+          {displayUser.location && (
+            <div className="flex items-center gap-1.5">
+              <MapPin className="h-4 w-4 shrink-0 stroke-[1.75]" />
+              <span>{displayUser.location}</span>
+            </div>
+          )}
+          {displayUser.website && (
+            <div className="flex items-center gap-1.5">
+              <LinkIcon className="h-4 w-4 shrink-0 stroke-[1.75]" />
+              <a
+                href={
+                  displayUser.website.startsWith('http')
+                    ? displayUser.website
+                    : `https://${displayUser.website}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--accent)] hover:underline"
+              >
+                {displayUser.website.replace(/^https?:\/\//, '')}
+              </a>
+            </div>
+          )}
           {displayUser.email && (
             <div className="flex items-center gap-1.5">
               <Mail className="h-4 w-4 shrink-0 stroke-[1.75]" />
@@ -196,12 +246,14 @@ const Profile = ({ profileUser, posts, isOwnProfile = true }) => {
             <span className="text-[var(--muted)]">Posts</span>
           </span>
           <span className="text-[var(--text)] font-normal">
-            <strong className="font-bold">142</strong>{' '}
+            <strong className="font-bold">{followingCount}</strong>{' '}
             <span className="text-[var(--muted)]">Following</span>
           </span>
           <span className="text-[var(--text)] font-normal">
-            <strong className="font-bold">1.2K</strong>{' '}
-            <span className="text-[var(--muted)]">Followers</span>
+            <strong className="font-bold">{followersCount}</strong>{' '}
+            <span className="text-[var(--muted)]">
+              {followersCount === 1 ? 'Follower' : 'Followers'}
+            </span>
           </span>
         </div>
       </div>

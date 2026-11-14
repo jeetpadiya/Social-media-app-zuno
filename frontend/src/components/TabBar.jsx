@@ -1,16 +1,18 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Home, Search, PlusCircle, Bell, User } from 'lucide-react'
+import { AuthContext } from '../context/AuthContext'
 
 const TabBar = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const { unreadCount } = useContext(AuthContext)
 
   const tabs = [
     { label: 'Home', path: '/posts', icon: Home },
     { label: 'Search', path: '/posts?tab=search', icon: Search },
     { label: 'Create', path: '/create-post', icon: PlusCircle },
-    { label: 'Notifications', path: '/posts?tab=notifications', icon: Bell },
+    { label: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
     { label: 'Profile', path: '/profile', icon: User },
   ]
 
@@ -26,23 +28,31 @@ const TabBar = () => {
       {tabs.map((tab) => {
         const Icon = tab.icon
         const active = isActive(tab.path)
+        const hasBadge = typeof tab.badge === 'number' && tab.badge > 0
         return (
           <button
             key={tab.label}
             type="button"
             onClick={() => navigate(tab.path)}
-            className={`flex h-12 w-12 items-center justify-center rounded-full transition-colors duration-150 ${
+            className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-colors duration-150 ${
               active
                 ? 'text-[var(--accent)]'
                 : 'text-[var(--text)] hover:text-[var(--accent)]'
             }`}
             aria-label={tab.label}
           >
-            <Icon
-              className={`h-6 w-6 stroke-[2] ${
-                active ? 'text-[var(--accent)]' : ''
-              }`}
-            />
+            <div className="relative">
+              <Icon
+                className={`h-6 w-6 stroke-[2] ${
+                  active ? 'text-[var(--accent)]' : ''
+                }`}
+              />
+              {hasBadge && (
+                <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[9px] font-bold text-white">
+                  {tab.badge > 99 ? '99+' : tab.badge}
+                </span>
+              )}
+            </div>
           </button>
         )
       })}

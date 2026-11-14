@@ -1,4 +1,6 @@
 import postModel from '../models/postSchema.js'
+import userModel from '../models/userSchema.js'
+import notificationModel from '../models/notificationSchema.js'
 
 const createPost = async (req, res) => {
     const { text } = req.body
@@ -165,6 +167,15 @@ const toggleLike = async (req, res) => {
         } else {
             // Add the like
             post.likes.push(userId);
+
+            if (post.user && post.user.toString() !== userId.toString()) {
+                notificationModel.create({
+                    recipient: post.user,
+                    sender: userId,
+                    type: 'like',
+                    post: post._id,
+                }).catch((err) => console.error("Notification like error:", err));
+            }
         }
 
         await post.save();
@@ -199,6 +210,17 @@ const addComment = async (req, res) => {
             path: 'comments.user',
             select: 'username avatar'
         })
+
+        if (post.user && post.user.toString() !== userId.toString()) {
+            notificationModel.create({
+                recipient: post.user,
+                sender: userId,
+                type: 'comment',
+                post: post._id,
+                text: text.slice(0, 80),
+            }).catch((err) => console.error("Notification comment error:", err));
+        }
+
         res.status(200).json({ success: true, message: "Comments Add Successfully", comment: post.comments[post.comments.length - 1] })
     }
     catch (error) {
@@ -206,4 +228,123 @@ const addComment = async (req, res) => {
     }
 }
 
-export { createPost, getPost, getPostByUser, getPostByUserId, updatePost, deletePost, toggleLike, addComment }
+const getFollowingPosts = async (req, res) => {
+    try {
+        const currentUser = await userModel.findById(req.user)
+        if (!currentUser) {
+            return res.status(404).json({ success: false, message: "User not found" })
+        }
+
+        const followingIds = currentUser.following || []
+
+        const posts = await postModel.find({ user: { $in: followingIds } })
+            .populate({
+                path: 'user',
+                select: 'username avatar'
+            })
+            .populate({
+                path: 'comments.user',
+                select: 'username avatar'
+            })
+            .sort({ createdAt: -1 })
+
+        res.status(200).json({ success: true, posts: posts || [] })
+    } catch (error) {
+        console.error("Error fetching following posts:", error)
+        res.status(500).json({ success: false, message: "Internal Server Error" })
+    }
+}
+
+const toggleBookmark = async (req, res) => {
+    try {
+        const postId = req.params.id
+        const userId = req.user
+
+        const user = await userModel.findById(userId)
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" })
+        }
+
+        const post = await postModel.findById(postId)
+        if (!post) {
+            return res.status(404).json({ success: false, message: "Post not found" })
+        }
+
+        if (!Array.isArray(user.bookmarks)) {
+            user.bookmarks = []
+        }
+
+        const isBookmarked = user.bookmarks.some((id) => id.toString() === postId.toString())
+
+        if (isBookmarked) {
+            user.bookmarks = user.bookmarks.filter((id) => id.toString() !== postId.toString())
+        } else {
+            user.bookmarks.push(postId)
+        }
+
+        await user.save()
+
+        return res.status(200).json({
+            success: true,
+            isBookmarked: !isBookmarked,
+            message: !isBookmarked ? "Post saved to your bookmarks" : "Post removed from your bookmarks",
+            bookmarks: user.bookmarks,
+        })
+    } catch (error) {
+        console.error("Toggle Bookmark Error:", error)
+        return res.status(500).json({ success: false, message: "Internal Server Error" })
+    }
+}
+
+const getBookmarkedPosts = async (req, res) => {
+    try {
+        const user = await userModel.findById(req.user).populate({
+            path: 'bookmarks',
+            populate: [
+                { path: 'user', select: 'username avatar' },
+                { path: 'comments.user', select: 'username avatar' },
+            ],
+        })
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" })
+        }
+
+        const validPosts = (user.bookmarks || [])
+            .filter((p) => p !== null && p !== undefined && p._id)
+            .reverse()
+
+        return res.status(200).json({
+            success: true,
+            posts: validPosts,
+        })
+    } catch (error) {
+        console.error("Get Bookmarked Posts Error:", error)
+        return res.status(500).json({ success: false, message: "Internal Server Error" })
+    }
+}
+
+const getPostById = async (req, res) => {
+    try {
+        const post = await postModel.findById(req.params.id)
+            .populate({
+                path: 'user',
+                select: 'username avatar',
+            })
+            .populate({
+                path: 'comments.user',
+                select: 'username avatar',
+            })
+
+        if (!post) {
+            return res.status(404).json({ success: false, message: "Post not found" })
+        }
+
+        res.status(200).json({ success: true, post })
+    } catch (error) {
+        console.error("Get Post By Id Error:", error)
+        res.status(500).json({ success: false, message: "Internal Server Error" })
+    }
+}
+
+export { createPost, getPost, getPostById, getFollowingPosts, getPostByUser, getPostByUserId, updatePost, deletePost, toggleLike, addComment, toggleBookmark, getBookmarkedPosts }

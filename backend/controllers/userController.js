@@ -1,4 +1,5 @@
 import userModel from '../models/userSchema.js'
+import notificationModel from '../models/notificationSchema.js'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
@@ -220,7 +221,7 @@ const me = async (req, res) => {
 
 const UpdateUser = async (req, res) => {
     try {
-        const { username, email } = req.body
+        const { username, email, bio, location, website } = req.body
         const updates = {}
 
         if (typeof username === 'string' && username.trim()) {
@@ -229,6 +230,18 @@ const UpdateUser = async (req, res) => {
 
         if (typeof email === 'string' && email.trim()) {
             updates.email = email.trim().toLowerCase()
+        }
+
+        if (typeof bio === 'string') {
+            updates.bio = bio.trim().slice(0, 160)
+        }
+
+        if (typeof location === 'string') {
+            updates.location = location.trim()
+        }
+
+        if (typeof website === 'string') {
+            updates.website = website.trim()
         }
 
         if (req.file?.path) {
@@ -296,5 +309,63 @@ const getUserById = async (req, res) => {
     }
 }
 
+const toggleFollow = async (req, res) => {
+    try {
+        const targetUserId = req.params.id
+        const currentUserId = req.user
 
-export { register, login, me, getUserById, UpdateUser, serachUser, forgotPassword, resetPassword }
+        if (targetUserId.toString() === currentUserId.toString()) {
+            return res.status(400).json({ success: false, message: "You cannot follow yourself" })
+        }
+
+        const targetUser = await userModel.findById(targetUserId)
+        const currentUser = await userModel.findById(currentUserId)
+
+        if (!targetUser || !currentUser) {
+            return res.status(404).json({ success: false, message: "User not found" })
+        }
+
+        if (!Array.isArray(targetUser.followers)) targetUser.followers = []
+        if (!Array.isArray(currentUser.following)) currentUser.following = []
+
+        const isFollowing = currentUser.following.some(
+            (id) => id.toString() === targetUserId.toString()
+        )
+
+        if (isFollowing) {
+            currentUser.following = currentUser.following.filter(
+                (id) => id.toString() !== targetUserId.toString()
+            )
+            targetUser.followers = targetUser.followers.filter(
+                (id) => id.toString() !== currentUserId.toString()
+            )
+        } else {
+            currentUser.following.push(targetUserId)
+            targetUser.followers.push(currentUserId)
+
+            notificationModel.create({
+                recipient: targetUserId,
+                sender: currentUserId,
+                type: 'follow',
+            }).catch((err) => console.error("Notification follow error:", err));
+        }
+
+        await Promise.all([currentUser.save(), targetUser.save()])
+
+        return res.status(200).json({
+            success: true,
+            isFollowing: !isFollowing,
+            message: !isFollowing
+                ? `Followed @${targetUser.username}`
+                : `Unfollowed @${targetUser.username}`,
+            followersCount: targetUser.followers.length,
+            followingCount: targetUser.following.length,
+            currentUserFollowing: currentUser.following,
+        })
+    } catch (error) {
+        console.error("Toggle Follow Error:", error)
+        return res.status(500).json({ success: false, message: "Internal Server Error" })
+    }
+}
+
+export { register, login, me, getUserById, UpdateUser, serachUser, forgotPassword, resetPassword, toggleFollow }
