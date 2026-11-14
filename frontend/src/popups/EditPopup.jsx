@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
-import { IoClose } from 'react-icons/io5'
+import React, { useEffect, useState } from 'react'
+import { X, Image as ImageIcon } from 'lucide-react'
+import ActionButton from '../components/ActionButton'
 
 const EditPopup = ({ post, isOpen, isSaving, onClose, onSave }) => {
   const [text, setText] = useState('')
@@ -8,7 +9,6 @@ const EditPopup = ({ post, isOpen, isSaving, onClose, onSave }) => {
 
   useEffect(() => {
     if (!isOpen || !post) return
-
     setText(post.text || '')
     setImageFile(null)
     setImagePreview(post.image || '')
@@ -16,10 +16,8 @@ const EditPopup = ({ post, isOpen, isSaving, onClose, onSave }) => {
 
   useEffect(() => {
     if (!imageFile) return
-
     const previewUrl = URL.createObjectURL(imageFile)
     setImagePreview(previewUrl)
-
     return () => {
       URL.revokeObjectURL(previewUrl)
     }
@@ -30,7 +28,6 @@ const EditPopup = ({ post, isOpen, isSaving, onClose, onSave }) => {
   const handleFileChange = (event) => {
     const file = event.target.files?.[0] || null
     setImageFile(file)
-
     if (!file && post.image) {
       setImagePreview(post.image)
     }
@@ -39,85 +36,99 @@ const EditPopup = ({ post, isOpen, isSaving, onClose, onSave }) => {
   const handleSubmit = async (event) => {
     event.preventDefault()
     const saved = await onSave(post._id, { text, image: imageFile })
-
     if (saved) {
       onClose()
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#020817]/75 px-4 backdrop-blur-md">
-      <div
-        className="absolute inset-0"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div className="glass-panel relative z-10 w-full max-w-2xl rounded-[32px] p-6 text-white">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.32em] text-slate-400">Edit post</p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight text-white">Refine your caption</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              Update the text and optionally replace the image before saving.
-            </p>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--modal-backdrop)] px-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
+
+      {/* Modal Dialog */}
+      <div className="relative z-10 w-full max-w-lg rounded-[16px] border border-[var(--border)] bg-[var(--surface)] p-5 text-[var(--text)] transition-fast">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+          <h2 className="text-[17px] font-bold text-[var(--text)]">Edit post</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-white/10 bg-white/6 p-3 text-xl text-white transition hover:bg-white/10"
-            aria-label="Close edit popup"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--text)] transition-colors duration-150 hover:bg-[var(--surface-hover)]"
+            aria-label="Close"
           >
-            <IoClose />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-200">Caption</label>
+            <label className="block text-[13px] font-bold text-[var(--muted)] mb-1">
+              Caption
+            </label>
             <textarea
               value={text}
-              onChange={(event) => setText(event.target.value)}
-              className="min-h-36 w-full rounded-[24px] border border-white/10 bg-[#f8fafc] p-4 text-black focus:outline-none focus:ring-2 focus:ring-sky-300"
-              placeholder="Update your caption"
-              rows="5"
+              onChange={(e) => setText(e.target.value)}
+              placeholder="What do you want to say?"
+              rows={4}
+              className="w-full resize-none rounded-[12px] border border-[var(--border)] bg-transparent p-3 text-[15px] text-[var(--text)] placeholder-[var(--muted)] focus:border-[var(--accent)] focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-200">Replace image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="w-full rounded-[20px] border border-white/10 bg-white/6 p-3 text-sm text-slate-200 file:mr-4 file:rounded-full file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-900"
-            />
+            <label className="flex items-center gap-2 cursor-pointer text-[14px] font-semibold text-[var(--accent)] hover:underline">
+              <ImageIcon className="h-4 w-4" />
+              <span>{imagePreview ? 'Replace image' : 'Add image'}</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
           </div>
 
           {imagePreview && (
-            <div className="overflow-hidden rounded-[24px] border border-white/10">
+            <div className="relative overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--surface-hover)]">
               <img
                 src={imagePreview}
-                alt="Updated post preview"
-                className="max-h-[20rem] w-full object-cover"
+                alt="Post preview"
+                className="max-h-56 w-full object-cover"
               />
+              <button
+                type="button"
+                onClick={() => {
+                  setImageFile(null)
+                  setImagePreview('')
+                }}
+                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white transition-opacity hover:opacity-80"
+                title="Remove image"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           )}
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <button
+          {/* Action buttons */}
+          <div className="flex items-center justify-end gap-2 border-t border-[var(--border)] pt-3">
+            <ActionButton
               type="button"
+              variant="secondary"
+              size="md"
               onClick={onClose}
-              className="rounded-full border border-white/10 bg-white/6 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
             >
               Cancel
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="submit"
+              variant="primary"
+              size="md"
               disabled={isSaving}
-              className="accent-button rounded-full px-6 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+              loading={isSaving}
             >
-              {isSaving ? 'Saving...' : 'Save Changes'}
-            </button>
+              Save
+            </ActionButton>
           </div>
         </form>
       </div>

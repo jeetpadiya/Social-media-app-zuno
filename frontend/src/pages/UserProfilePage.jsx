@@ -1,9 +1,10 @@
-import { useEffect, useState, useContext } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import { toast } from 'sonner'
-import SideBar from '../components/SideBar'
+import MainLayout from '../components/MainLayout'
 import Profile from '../components/Profile'
+import { ProfileSkeleton } from '../components/Skeleton'
 import { AuthContext } from '../context/AuthContext'
 
 const UserProfilePage = () => {
@@ -23,12 +24,14 @@ const UserProfilePage = () => {
           axios.get(`${backendUrl}/api/posts/user/${id}`),
         ])
 
-        if (userResponse.data.success) {
+        if (userResponse.data?.success) {
           setProfileUser(userResponse.data.user)
         }
 
-        if (postsResponse.data.success) {
-          setPosts(Array.isArray(postsResponse.data.posts) ? postsResponse.data.posts : [])
+        if (postsResponse.data?.success) {
+          setPosts(
+            Array.isArray(postsResponse.data.posts) ? postsResponse.data.posts : []
+          )
         }
       } catch (error) {
         toast.error(error.response?.data?.message || 'Failed to load profile')
@@ -49,18 +52,13 @@ const UserProfilePage = () => {
   }, [backendUrl, id, navigate, user])
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col overflow-auto px-4 py-6 md:flex-row md:gap-6">
-      <div className="hidden md:block md:shrink-0">
-        <SideBar />
-      </div>
-      <div className="flex-1">
-        {loading ? (
-          <div className="p-6 text-white">Loading profile…</div>
-        ) : (
-          <Profile profileUser={profileUser} posts={posts} isOwnProfile={false} />
-        )}
-      </div>
-    </div>
+    <MainLayout title={profileUser?.username || 'Profile'}>
+      {loading ? (
+        <ProfileSkeleton />
+      ) : (
+        <Profile profileUser={profileUser} posts={posts} isOwnProfile={false} />
+      )}
+    </MainLayout>
   )
 }
 

@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
-import { IoClose } from 'react-icons/io5'
+import React, { useEffect, useState } from 'react'
+import { X, Camera } from 'lucide-react'
+import ActionButton from '../components/ActionButton'
+import Avatar from '../components/Avatar'
 
 const EditProfilePopup = ({ user, isOpen, isSaving, onClose, onSave }) => {
   const [username, setUsername] = useState('')
@@ -9,7 +11,6 @@ const EditProfilePopup = ({ user, isOpen, isSaving, onClose, onSave }) => {
 
   useEffect(() => {
     if (!isOpen || !user) return
-
     setUsername(user.username || '')
     setEmail(user.email || '')
     setAvatarFile(null)
@@ -18,10 +19,8 @@ const EditProfilePopup = ({ user, isOpen, isSaving, onClose, onSave }) => {
 
   useEffect(() => {
     if (!avatarFile) return
-
     const previewUrl = URL.createObjectURL(avatarFile)
     setAvatarPreview(previewUrl)
-
     return () => {
       URL.revokeObjectURL(previewUrl)
     }
@@ -31,103 +30,97 @@ const EditProfilePopup = ({ user, isOpen, isSaving, onClose, onSave }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-
     const saved = await onSave({
       username,
       email,
       avatarFile,
     })
-
     if (saved) {
       onClose()
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#020817]/75 px-4 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--modal-backdrop)] px-4">
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
-      <div className="glass-panel relative z-10 w-full max-w-2xl rounded-[32px] p-6 text-white">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.32em] text-slate-400">Edit profile</p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight text-white">Refresh your identity</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              Update your username, email, and avatar from one place.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-white/10 bg-white/6 p-3 text-xl text-white transition hover:bg-white/10"
-            aria-label="Close edit profile popup"
-          >
-            <IoClose />
-          </button>
-        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid gap-5 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-200">Username</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                className="w-full rounded-[20px] border border-white/10 bg-[#f8fafc] px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-300"
-                placeholder="Username"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-200">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="w-full rounded-[20px] border border-white/10 bg-[#f8fafc] px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-300"
-                placeholder="Email"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-200">Replace avatar</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(event) => setAvatarFile(event.target.files?.[0] || null)}
-              className="w-full rounded-[20px] border border-white/10 bg-white/6 p-3 text-sm text-slate-200 file:mr-4 file:rounded-full file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-900"
-            />
-          </div>
-
-          {avatarPreview && (
-            <div className="flex items-center gap-4 rounded-[24px] border border-white/10 bg-white/5 p-4">
-              <img
-                src={avatarPreview}
-                alt="Profile preview"
-                className="h-24 w-24 rounded-[24px] object-cover ring-1 ring-white/10"
-              />
-              <div>
-                <p className="text-sm font-semibold text-white">Avatar preview</p>
-                <p className="mt-1 text-sm text-slate-400">This image will appear on your profile and posts.</p>
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <div className="relative z-10 w-full max-w-lg rounded-[16px] border border-[var(--border)] bg-[var(--surface)] p-5 text-[var(--text)] transition-fast">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-white/10 bg-white/6 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--text)] transition-colors duration-150 hover:bg-[var(--surface-hover)]"
+              aria-label="Close"
             >
-              Cancel
+              <X className="h-5 w-5" />
             </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="accent-button rounded-full px-6 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSaving ? 'Saving...' : 'Save Profile'}
-            </button>
+            <h2 className="text-[17px] font-bold text-[var(--text)]">Edit profile</h2>
+          </div>
+          <ActionButton
+            type="button"
+            variant="dark"
+            size="sm"
+            pill
+            disabled={isSaving}
+            loading={isSaving}
+            onClick={handleSubmit}
+          >
+            Save
+          </ActionButton>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          {/* Avatar Upload */}
+          <div className="flex items-center gap-4 py-2">
+            <div className="relative group">
+              <Avatar
+                src={avatarPreview}
+                name={username}
+                size="xl"
+              />
+              <label className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white opacity-90 cursor-pointer transition-opacity group-hover:opacity-100">
+                <Camera className="h-6 w-6 stroke-[2]" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            <div>
+              <p className="text-[14px] font-bold text-[var(--text)]">Profile photo</p>
+              <p className="text-[13px] text-[var(--muted)]">Click on avatar to change</p>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[13px] font-bold text-[var(--muted)] mb-1">
+              Username
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Username"
+              className="w-full rounded-[8px] border border-[var(--border)] bg-transparent p-3 text-[15px] text-[var(--text)] placeholder-[var(--muted)] focus:border-[var(--accent)] focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[13px] font-bold text-[var(--muted)] mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              className="w-full rounded-[8px] border border-[var(--border)] bg-transparent p-3 text-[15px] text-[var(--text)] placeholder-[var(--muted)] focus:border-[var(--accent)] focus:outline-none"
+            />
           </div>
         </form>
       </div>
